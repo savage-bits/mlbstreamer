@@ -122,31 +122,37 @@ def main():
         sys.exit(0)
     config.settings.load()
 
-    state.session = MLBSession.new()
 
-    if options.game.isdigit():
-        game_id = int(options.game)
-    else:
+    if options.game:
+        state.session = MLBSession.new()
 
-        season = today.year
-        teams_url = (
-            "http://statsapi.mlb.com/api/v1/teams"
-            "?sportId={sport}&season={season}".format(
-                sport=1,
-                season=season
+        if options.game.isdigit():
+            game_id = int(options.game)
+        else:
+
+            season = today.year
+            teams_url = (
+                "http://statsapi.mlb.com/api/v1/teams"
+                "?sportId={sport}&season={season}".format(
+                    sport=1,
+                    season=season
+                )
             )
-        )
-        teams = {
-            team["fileCode"]: team["id"]
-            for team in state.session.get(teams_url).json()["teams"]
-        }
-        schedule = state.session.schedule(
-            start = options.date,
-            end = options.date,
-            sport_id = 1,
-            team_id = teams[options.game]
-        )
-        game_id = schedule["dates"][0]["games"][0]["gamePk"]
+            teams = {
+                team["fileCode"]: team["id"]
+                for team in state.session.get(teams_url).json()["teams"]
+            }
+            schedule = state.session.schedule(
+                start = options.date,
+                end = options.date,
+                sport_id = 1,
+                team_id = teams[options.game]
+            )
+            game_id = schedule["dates"][0]["games"][0]["gamePk"]
+    else:
+        logger.error("No game was selected")
+        sys.exit(0)
+
 
     try:
         proc = play_stream(
